@@ -6,7 +6,7 @@
   "architecture": {
     "64bit": {
       "url": "https://github.com/hexonal/entrox/releases/download/entrox-dev/entrox-cli-windows-x64.zip",
-      "hash": "cef8c087ab7a3406e218178b877d570e288417b365a3bd36018053ed562bc6f4"
+      "hash": "dc34230696b5349e9f438cbbbb9a6827370fc95aca3e9ce3afd113cbc0f5cf63"
     }
   },
   "bin": "bin\\entrox.exe"
