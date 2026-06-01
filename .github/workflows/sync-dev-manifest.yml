@@ -2,6 +2,9 @@ name: sync-dev-manifest
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types:
+      - sync-dev-manifest
   schedule:
     - cron: "*/15 * * * *"
 
