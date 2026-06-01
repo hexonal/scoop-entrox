@@ -1,0 +1,69 @@
+name: sync-dev-manifest
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-dev-manifest
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Sync Entrox dev manifest
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import re
+          import urllib.request
+
+          release_url = "https://api.github.com/repos/hexonal/entrox/releases/tags/entrox-dev"
+          with urllib.request.urlopen(release_url) as response:
+              release = json.load(response)
+
+          body = release.get("body") or ""
+          version_match = re.search(r"Version:\s*`?([^`\s]+)`?", body)
+          manifest_path = pathlib.Path("bucket/entrox.json")
+          current_manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+          version = version_match.group(1) if version_match else current_manifest.get("version", "0.0.0-ci")
+
+          assets = {asset["name"]: asset["browser_download_url"] for asset in release.get("assets", [])}
+          asset_name = "entrox-cli-windows-x64.zip"
+          with urllib.request.urlopen(assets[asset_name]) as response:
+              windows_x64_hash = hashlib.sha256(response.read()).hexdigest()
+
+          manifest = {
+              "version": version,
+              "description": "Entrox CLI",
+              "homepage": "https://entrox.996icu.wiki",
+              "license": "MIT",
+              "architecture": {
+                  "64bit": {
+                      "url": "https://github.com/hexonal/entrox/releases/download/entrox-dev/entrox-cli-windows-x64.zip",
+                      "hash": windows_x64_hash,
+                  }
+              },
+              "bin": r"bin\entrox.exe",
+          }
+          manifest_path.parent.mkdir(exist_ok=True)
+          manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+          PY
+          python3 -m json.tool bucket/entrox.json >/dev/null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bucket/entrox.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update Entrox dev Scoop manifest"
+            git push
+          fi
