@@ -25,26 +25,24 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib
           import json
           import pathlib
-          import re
           import urllib.request
 
-          release_url = "https://api.github.com/repos/hexonal/entrox/releases/tags/entrox-dev"
-          with urllib.request.urlopen(release_url) as response:
-              release = json.load(response)
-
-          body = release.get("body") or ""
-          version_match = re.search(r"Version:\s*`?([^`\s]+)`?", body)
           manifest_path = pathlib.Path("bucket/entrox.json")
           current_manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
-          version = version_match.group(1) if version_match else current_manifest.get("version", "0.0.0-ci")
+          latest_url = "https://entrox.996icu.wiki/downloads/entrox-dev/latest.json"
+          with urllib.request.urlopen(latest_url) as response:
+              latest = json.load(response)
 
-          assets = {asset["name"]: asset["browser_download_url"] for asset in release.get("assets", [])}
+          version = latest.get("version") or current_manifest.get("version", "0.0.0-ci")
+          assets = {asset["name"]: asset for asset in latest.get("assets", [])}
           asset_name = "entrox-cli-windows-x64.zip"
-          with urllib.request.urlopen(assets[asset_name]) as response:
-              windows_x64_hash = hashlib.sha256(response.read()).hexdigest()
+          windows_x64 = assets.get(asset_name)
+          if not windows_x64:
+              raise RuntimeError(f"missing {asset_name} in {latest_url}")
+          if not windows_x64.get("url") or not windows_x64.get("sha256"):
+              raise RuntimeError(f"missing url or sha256 for {asset_name} in {latest_url}")
 
           manifest = {
               "version": version,
@@ -53,8 +51,8 @@ jobs:
               "license": "MIT",
               "architecture": {
                   "64bit": {
-                      "url": "https://github.com/hexonal/entrox/releases/download/entrox-dev/entrox-cli-windows-x64.zip",
-                      "hash": windows_x64_hash,
+                      "url": windows_x64["url"],
+                      "hash": windows_x64["sha256"],
                   }
               },
               "bin": r"bin\entrox.exe",
