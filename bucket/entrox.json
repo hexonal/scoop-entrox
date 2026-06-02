@@ -1,12 +1,12 @@
 {
-  "version": "0.0.0-ci.30.1",
+  "version": "0.0.0-ci.31.1",
   "description": "Entrox CLI",
   "homepage": "https://entrox.996icu.wiki",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://entrox-download.996icu.wiki/entrox-dev/0.0.0-ci.30.1/entrox-cli-windows-x64.zip",
-      "hash": "9292c43b55d71f0851768b7cece57f8ef81caf3960d037d8a66e15244512d3b2"
+      "url": "https://entrox-download.996icu.wiki/entrox-dev/0.0.0-ci.31.1/entrox-cli-windows-x64.zip",
+      "hash": "9a49a38cc999482bce074123592337babc2f6122d4c84d8a41309d632adc4050"
     }
   },
   "bin": "bin\\entrox.exe"
